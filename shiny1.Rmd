@@ -5,8 +5,7 @@ date: "11/29/2018"
 output: html_document
 ---
 ```{r, echo=F, out.width='100%'}
-
 knitr::include_app("https://anne3628.shinyapps.io/NonViolentCrimeAndPoverty/")
-
 ```
 
+[Explanation of Visualization](shinyExplain.html)

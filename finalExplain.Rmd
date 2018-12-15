@@ -1,0 +1,40 @@
+---
+title: "Explanation - Nature of Middle-Class Jobs"
+author: "Anne Freeman"
+output: html_document
+---
+
+## Objective
+The goal for our final project was to imitate and improve upon a visualization from a popular media source. We selected [this visualization](https://www.nytimes.com/interactive/2015/02/23/business/economy/the-changing-nature-of-middle-class-jobs.html) from the nytimes on the changing nature of middle class jobs. The article sited their data from  the US Census, r more specificically from the Integrated Public Use Microdata Series [IPUMS-USA](https://usa.ipums.org/usa/). 
+
+We downloaded the data required for the visualization, including the sex, income status, occupation, and industry category. We found that re-coding within those variables made it most convenient to work with data from 1997 to 2014, as that data could be represented with a consistent variable. Additionally, the income status for participants in the census was represented by numbers representing different income brackets (e.g. 15,000 - 20,000). We decided to select the middle of the bracket and multiply by the CPI factor for 2014. 
+
+We defined middle class as individuals with income levels (variable EARNINGS from IPUMS) between [35,000, 75,000]. Lower class was defined as less than 35,000 and upper class was defined as greater than 75,000.
+
+## Tab 1  
+Each line represents an occupation with the different columns representing industries. The vertical positioning of the line is determined by the percentage of job market (# employees in that occupation / total # of employees) in that year. That graph goes from 1997 to 2014. The color of the dots represents the percentage of female employees in that occupation.  
+
+When a user selects an occupation, it is highlighted on the graph above and a graph below shows a closer look at how that occupation has changed over time. The graph below shows data from each year and the slight variations that occured in percentage women and percentage of the job market.  
+
+Our visualization does not look identical to the nytimes. This could be because we had different definitions of middle class income status and they appear to be using different industry categories. We used the industry categories that were encoded by the census variable OCC1995. 
+
+## Tab 2  
+
+We display two graphs on this page. One is a scatter plot of the occupations in a particular year and the other displays an overview of the occupations. The y-position of both graphs is determined by the percentage of job market and the x-position is determined by the percentage women.  
+
+The top plot shows a scatter plot of the occupations within the selected industries. It is colored by industry and plots the selected ones. It is animated over time and allows the user to select to use a logarithmic y-axis.  
+
+The bottom plot shows an overview of the occupations within the selected industries. It is colored by industry and plots the selected ones. The beginning point is 1997 and represented by a circle. The end point is 2014 and is represented by a triangle.  
+
+We found these graphs to be helpful visualizations because it is nice to see an overview of how an occupation changes overtime as well as the year to year comparision.
+
+## Tab 3
+
+The tab displays bar graphs side-by-side for the selected industry and the distribution of specific occupations across lower-class, middle-class, and upper-class. The graph is animated through time to see how this distribution changes.
+
+Additionally, there is an option to see the total percentage in the job market, rather than a distribution in each class. This option allows users to see what percentage of the job market each particular industry has across the three class levels.  
+
+We thought that this visualization was interesting because it allowed us to see how the other class levels were changing over time and to see how the makeup of middle class jobs within each industry changed over time. 
+
+
+

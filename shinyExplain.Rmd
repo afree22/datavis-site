@@ -1,0 +1,31 @@
+---
+title: "Explanation - Non-Violent Crime & Poverty Rate"
+output: html_document
+---
+
+## Tab 1 - Map
+We created a chloropleth graph of the united states using the map data from the state and the data for each state for non-violent crime rates and the poverty rate.
+
+The map plot has the following features:  
+
+*  the user can select a variable to be displayed via the color scheme on the map (color each state depending on the variable's value for that particular year)  
+* the user can select which color theme they would like to use for the map
+* the plot is animated over time and the user can select which year they would like to view
+* the user can click on a state to see a line graph of that variable displayed below with an animated veritical line indicating the year
+
+
+## Tab 2 - Bubble Plot
+We created a bubble plot using the crime in each state and the percent poverty in each state.  
+The bubble plot has the following features:  
+
+* size is determined by the population of that state
+* position is determined by the variables that the user selects (percent poverty, or the 4 non-violent crime rates)
+* color is determined according the the defined cenus regions
+* the bubble plot is animated over time, with the user having the ability to select a particular year
+
+The bubble plot changes over time but the axis limits remained fixed. The user has the option to plot the x-axis, the y-axis, or both on a logarithmic scale. When the user clicks on a point, it's values are displayed in the table below the graph. 
+
+## Tab 3 - Time Series
+We created a line graph displaying the four non-violent crime rates for a particular state over time. The user can select which state to view. The graph has different colors for each of the non-violent crime rates.
+
+
