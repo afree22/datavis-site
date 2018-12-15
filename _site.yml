@@ -1,0 +1,34 @@
+name: "Anne Freeman"
+navbar:
+  title: "Anne Freeman"
+  type: default
+  left:
+    - text: "Home"
+      icon: fa-home
+      href: index.html
+    - text: "Guided Exercises"
+      icon: ion-laptop
+      menu:
+        - text: "Men's Hair Color"
+          href: exercise1.html
+        - text: "Baseball Data"
+          href: exercise2.html
+    - text: "Data Exploration Labs"
+      icon: ion-color-palette
+      menu:
+        - text: "Level of Education and Cocaine Usage"
+          href: lab01.html
+        - text: "Non-violent crime and poverty rates"
+          href: shiny1.html
+        - text: "DC Migration"
+          href: DCMigration.html
+    - text: "Final Project"
+      href: final.html
+      
+  right:
+    - icon: fa-question fa-lg
+      href: https://example.com
+output:
+  html_document:
+    theme: spacelab
+    highlight: textmate

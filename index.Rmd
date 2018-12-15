@@ -1,0 +1,12 @@
+---
+title: "Welcome!"
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+# opts_chunk$set(echo = TRUE)
+# options(width=80)
+opts_chunk$set(comment = "", warning = FALSE, message = FALSE, echo = TRUE, tidy = TRUE, size="small")
+```
+
+Hi, welcome to my website for the Data Visualization course I took at Georgetown University during the Fall of 2018. Feel free to explore some of the visualizations I have created and the data that I used.

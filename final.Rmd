@@ -1,0 +1,12 @@
+---
+title: "The Nature of Middle-Class Jobs"
+author: "Anne Freeman"
+date: "12/15/2018"
+output: html_document
+---
+
+```{r, echo=F, out.width='100%'}
+
+knitr::include_app("https://anne3628.shinyapps.io/middleclass/")
+
+```

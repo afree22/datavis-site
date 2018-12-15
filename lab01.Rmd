@@ -1,0 +1,153 @@
+---
+title: "Health and Drug Use Visualizations"
+author: "Anne Freeman"
+date: "9/18/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(comment = "", warning = FALSE, message = FALSE, echo = FALSE, tidy = TRUE, size="small")
+```
+
+## Introduction
+In this exercise, we address the question, "How do education levels differ in groups with different cocaine usage?"   
+
+In this document we will:  
+* Load the data
+* Define different levels of cocaine usage
+* Create a new variable based on cocaine usage
+* Present a graph that can be clearly understood that addresses the question of interest
+
+
+## Data
+To address this question, we will use data from the 2014 National Survey on Drug Use and Health, which is conducted annually by the Substance Abuse and Mental Health Services Administration (SAMHSA), an agency in the U.S. Department of Health and Human Services (DHHS). More information about this survey can be found at ICPSR’s data archive page. The data has been prepared into a .Rdata file, so we can simply load it in the workspace with the load() command. We will also load the packages that we need -- tidyverse and forcats.
+```{r input}
+library(tidyverse)
+library(forcats)
+load("data/36361-0001-Data.rda")
+```
+
+The data object has a somewhat unpleasant name so we will copy it into full_data and delete the original object. 
+```{r rename}
+full_data <- da36361.0001
+remove(da36361.0001)
+```
+
+
+## Data Manipulation
+First we will add a variable to the full_data called coc_user_status. We will set this variable to "Never User" if a person has answered "No" to the question "Have you ever used cocaine?" as coded by the variable COCEVER. Then we split up the current and former users. We define a former user as someone who has used cocaine at least once, but not in the past 12 months. We use the variable COCREC to determine if someone is a "Former User" or a "Current User".  
+The table at the end confirms that anyone who answers "Yes" to having used cocaine is coded as a Current or Former User. It also confirms that current users are people who have used cocaine in the past 12 months. There are 23 NA values in the last row of the table because 12 people refused to answer and 11 people left the question blank. 
+
+```{r addCOC}
+full_data <- mutate(full_data, coc_user_status = 
+                      ifelse(COCEVER == "(2) No", "Never User", 
+                             ifelse(COCREC  == "(03) More than 12 months ago" | 
+                                      COCREC == "(09) Used at some point in the lifetime LOG ASSN", "Former User", "Current User")))
+
+count(full_data, COCEVER, coc_user_status, COCREC)
+```
+
+Then we decided to create a variable, coc_year_use to provide more information on the current users and how frequently they use cocaine. We decided to create four groups and separate cocaine users based on quartiles. "Light, Current Users" fall in the first quartile, "Occasional, Current Users" fall in the second quartile, "Moderate, Current Users" fall in the third quartile, and "Heavy, Current Users" fall in the fourth quartile. The the days for quartiles were determined using the quantile() function and the data was separated with the cut() function.
+```{r quartile}
+quantile(full_data$COCYRTOT, c(0,.25,.5,.75,1), na.rm=T)
+full_data <- mutate(full_data, coc_year_use = cut(COCYRTOT, c(1,2,5,29,365), c("Light", "Occasional", "Moderate", "Heavy")))
+```
+
+Then I use the coc_year_use variable to replase the coc_user_status variable for Current Users. It provides more specific information on the current users. This is accomplished in two steps. The first step finds when coc_user_status is "Curren User" and replaces "Current User" with the index of the coc_year_use, as shown by the results of the count function. The next step replaces the numbers with the proper labels. 
+```{r combine}
+full_data <- mutate(full_data, coc_user_status = ifelse(coc_user_status == "Current User", coc_year_use, coc_user_status))
+count(full_data, coc_year_use, coc_user_status)
+full_data <- mutate(full_data, coc_user_status = ifelse(coc_user_status == "1", "Light, Current User",
+                                                       ifelse(coc_user_status == "2", "Occasional, Current User",
+                                                              ifelse(coc_user_status == "3", "Moderate, Current User",
+                                                                     ifelse(coc_user_status == "4", "Heavy, Current User",
+                                                                     coc_user_status)))))
+```
+
+Finally I have combined enough data to create a rough graph of the cocain user status with the coloring indicating the education level.
+```{r roughGraph}
+ggplot(full_data) + geom_bar(aes(x=coc_user_status, fill=EDUCCAT2), position = "fill")
+```
+
+The labels on the x-axis are out of order so I make the variable coc_user_status a factor. Then I use the function fct_relevel() to change the order of the levels in coc_user_status so that the graph will make more sense
+```{r cocRelevel}
+full_data <- mutate(full_data, coc_user_status = as.factor(coc_user_status))
+full_data <- mutate(full_data, coc_user_status = fct_relevel(coc_user_status, "Never User", "Former User", "Light, Current User", "Occasional, Current User", "Moderate, Current User", "Heavy, Current User"))
+```
+
+The levels in education status also seem out of order as the labels go from less than high school to college and then back to 12 to 17 year olds. So I used the fct_relevel() function to relevel them. I also renamed the levels in EDUCCAT2 as the names were somewhat confusing and linked to other variables in the survey.  
+```{r eduRelevel}
+levels(full_data$EDUCCAT2)
+full_data <- mutate(full_data, EDUCCAT2 = fct_relevel(EDUCCAT2, "(5) 12 to 17 year olds (AGE2<=6)", "(1) Less than high school (IREDUC2<=7 and AGE2>=7)", "(2) High school graduate (IREDUC2=8 and AGE2>=7)", "(3) Some college (IREDUC2=9-10 and AGE2>=7)", "(4) College graduate (IREDUC2=11 and AGE2>=7)"))
+
+full_data <- mutate(full_data, EDUCCAT2 = fct_recode(EDUCCAT2,  "12 to 17 year olds" = "(5) 12 to 17 year olds (AGE2<=6)", "Less Than High School" = "(1) Less than high school (IREDUC2<=7 and AGE2>=7)",  "High School Graduate" = "(2) High school graduate (IREDUC2=8 and AGE2>=7)", "Some College" = "(3) Some college (IREDUC2=9-10 and AGE2>=7)", "College Graduate" = "(4) College graduate (IREDUC2=11 and AGE2>=7)"))
+```
+
+## Visual Display
+In my final graph I also changed the colors and the labels so that it is easy to understand. 
+
+```{r finalGraph}
+ggplot(data=subset(full_data, !is.na(full_data$coc_user_status))) + 
+  geom_bar(aes(x=coc_user_status, fill=EDUCCAT2), position = "fill") + 
+  scale_fill_brewer(palette="Spectral",
+                    name="Education Status")+
+  labs(x="",y="Relative Frequency",
+       title="Education Status of Groups Based on Cocaine Use") +
+  scale_x_discrete(labels=c("Never\nUser","Former\nUser","Light,\nCurrent User ", 
+                           "Occasional,\nCurrent User", "Moderate,\nCurrent User",
+                           "Heavy,\nCurrent User"))
+```
+
+## Numerical Verification
+In order to verify that the above graph is correct, I performed the following calculations. These calculations show the percentages of education statuses in each of the cocaine status groups. The tables for each cocaine usage group with the percentage of the people falling in each education status match the proportions shown on the graph. 
+
+```{r never}
+neverUsers <- data.frame(count(full_data, coc_user_status == "Never User", EDUCCAT2))
+neverUsers <- data.frame(neverUsers[which(neverUsers[,1] == "TRUE"),])
+neverUsers[,3] <- neverUsers[,3] / sum(neverUsers[,3]) * 100
+```
+
+```{r form}
+formerUsers <- data.frame(count(full_data, coc_user_status == "Former User", EDUCCAT2))
+formerUsers <- data.frame(formerUsers[which(formerUsers[,1] == "TRUE"),])
+formerUsers[,3] <- formerUsers[,3] / sum(formerUsers[,3]) * 100
+```
+
+```{r light}
+lightUsers <- data.frame(count(full_data, coc_user_status == "Light, Current User", EDUCCAT2))
+lightUsers <- data.frame(lightUsers[which(lightUsers[,1] == "TRUE"),])
+lightUsers[,3] <- lightUsers[,3] / sum(lightUsers[,3]) * 100
+```
+
+```{r occasional}
+occasional <- data.frame(count(full_data, coc_user_status == "Occasional, Current User", EDUCCAT2))
+occasional <- data.frame(occasional[which(occasional[,1] == "TRUE"),])
+occasional[,3] <- occasional[,3] / sum(occasional[,3]) * 100
+```
+
+```{r}
+moderate <- data.frame(count(full_data, coc_user_status == "Moderate, Current User", EDUCCAT2))
+moderate <- data.frame(moderate[which(moderate[,1] == "TRUE"),])
+moderate[,3] <- moderate[,3] / sum(moderate[,3]) * 100
+```
+
+```{r}
+heavy <- data.frame(count(full_data, coc_user_status == "Heavy, Current User", EDUCCAT2))
+heavy <- data.frame(heavy[which(heavy[,1] == "TRUE"),])
+heavy[,3] <- heavy[,3] / sum(heavy[,3]) * 100
+```
+
+
+## Results
+A larger proportion (~28%) of never users are 12 to 17 year olds whereas this group is barely present (~0.6%) in the former users category. College graduates composed a similar proportion of the former user group (~25.4%) and the light current user group (~25.9%). Additionally, college graduates composed similar proportions of the occasional, current user group (~21.9%) and the moderate, current user group (~19.2%). Similarly, those with some college education consist in the largest proportion in the Light, Current User Group (~35%) and the Occasional, Current User Group (~36%). 12 to 17 year olds exist in the highest proportion in the Never User group, but they exist in the second highest proportion in the Heavy, Current User Group (~9%). Addtionally, those with less than a high school education or a high school degree exist in the highest proportions in the Heavy, Current User Group.
+
+## Conclusions / Discussion
+The group that has never used cocaine consists of the highest proportion of 12 to 17 year olds as they may never have been exposed to cocaine. Similarly, the 12 to 17 year olds have the smallest proportion in the former usage group as they are likely too young to have been exposed and tried it and then have stopped using it. College Graduates are have the largest proportions in Former User and Light, Current User. Indicating that using cocaine in the past and between 1 and 2 days a year (light, current usage), is not contraindicative to graduating college. Additionally, those with some college also have consist in the largest proportion in the Light, Current User (~35%) and the Occasional, Current User (~36%) groups. Those with a High School Education and a less than High School Education exist in the highest proportions in the Heavy, Current User Group. This would indicate that some light or occasional cocaine usage is not uncommon among those receiving or working towards receiving a college degree but excessive usage is associated with a lower education status.  
+
+The display shows the distributions of the different education statuses based on cocaine usage patterns. It allows for comparisions based on the relative proportions between the groups and shows how the education levels differ between the groups based on cocaine habits. Showing the data based on frequency is not perfect but the number of "Never Users" is much greater than the number of cocaine users, which is why I selected to show education satus within each cocaine usage group. I would also be interested in looking at drug habits in individuals who use cocaine and the job types of people with different cocaine usage patterns. 
+
+
+
+
+

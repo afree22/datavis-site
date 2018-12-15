@@ -1,0 +1,98 @@
+---
+title: "Visualizations of Baseball Data"
+author: "Anne Freeman"
+date: "9/27/2018"
+output: html_document
+---
+```{r start, include=FALSE}
+library(knitr)
+opts_chunk$set(comment = "", warning = FALSE, message = FALSE, echo = FALSE, tidy = TRUE, size="small")
+```
+
+## Introduction
+In this exercise I will generate five graphs displaying information from the [Lahman Baseball Database](http://www.seanlahman.com/baseball-archive/statistics/). The data files used include:  
+
+* Master.csv – contains information (such as date of birth, place of birth, height, weight, batting hand, throwing hand, full name, etc.) about each player, each player is given a unique playerID that is used to reference them in other data files; each row in this data file represents a single player and each player appears exactly once in this data file
+
+* Pitching.csv – contains information on the pitching records of individual players during individual season; each row in this data file represents the batting record of a player in a particular season and each player may appear several times if they played during multiple seasons (if a player switched teams during a season, that player will have multiple rows for that season, a separate record for their performance with each team)
+
+* Salaries.csv – contains salary information; players will appear multiple times if they played in multiple seasons  
+
+I will also use inflation data from [Bureau of Labor Statistics’ Consumer Price Index Inflation Calculator](https://www.bls.gov/data/inflation_calculator.htm). This information is contained in inflation.csv and the file contains two variables, the year and inflation2015. Inflation2015 gives the purchasing power of one dollar in year (for a year between 1980 and 2015) in terms of 2015 dollars.
+
+## Setup
+```{r setup, echo=T, results = "hide"}
+library(tidyverse)
+# library(formatR)
+player_data <- read.csv("data/Master.csv")
+pitching_data <- read.csv("data/Pitching.csv")
+salary_data <- read.csv("data/Salaries.csv")
+inflation_index <- read.csv("data/inflation.csv")
+```
+
+## Graph 1
+This is a series of boxplots, one for each year, showing the distribution of ERAs. 
+```{r graph1, echo=T}
+class(pitching_data$yearID)
+pitching_data$yearID <- as.factor(pitching_data$yearID)
+class(pitching_data$yearID)
+ggplot(data = subset(pitching_data, !is.na(ERA))) +geom_boxplot(aes(x=yearID, y=ERA))  
+```
+
+## Median Salary Over Time
+This grpah shows how the median ERA has changed over time.
+```{r graph2, echo=T}
+pitching_data$yearID <- as.numeric(as.character(pitching_data$yearID))  
+summary_era <- summarize(group_by(pitching_data, yearID), Q1 = quantile(ERA,.25,na.rm=T), median=median(ERA,na.rm=T), Q3 = quantile(ERA,.75,na.rm=T), min=min(ERA,na.rm=T), max=max(ERA,na.rm=T))
+ggplot(summary_era)+geom_line(aes(x=yearID, y=median))
+```
+
+
+## Changes in ERA Over Time
+Banded ERA
+```{r graph3, echo=T}
+ggplot(summary_era)+geom_ribbon(aes(x=yearID, ymin=Q1, ymax=Q3),fill="lightgreen")+geom_line(aes(x=yearID, y=median),color="darkblue")
+```
+
+
+## Pitchers and ERAs
+```{r graph4, echo=T}
+pitching_data_filtered<-filter(pitching_data,G >= 10)
+
+summary_era_2 <- summarize(group_by(pitching_data_filtered, yearID), median=median(ERA,na.rm=T), count=n(), unique_count=n_distinct(playerID), era_low_proportion = mean(ERA <= 3, na.rm = T), era_high_proportion = mean(ERA >= 6, na.rm = T))
+
+ggplot(summary_era_2) +
+  geom_line(aes(x=yearID, y=era_low_proportion, color="3 or under")) + 
+  geom_line(aes(x=yearID, y=era_high_proportion, color="6 or higher")) + 
+  labs(title="Proportion of Pitchers (pitching at least 10 games)\nWith Low and High ERAs by Year",y="Proportion", x = "Year") +
+  scale_color_manual(name="ERA", values = c("3 or under" = "darkblue", "6 or higher" = "red")) +
+  theme_classic()
+```
+
+
+## Salaries of Middle 50% of Baseball Players
+```{r graph5}
+summary_salary <- summarize(group_by(salary_data, yearID), Q1 = quantile(salary,.25,na.rm=T), median=median(salary,na.rm=T), Q3 = quantile(salary,.75,na.rm=T), min=min(salary,na.rm=T), max=max(salary,na.rm=T))
+
+names(inflation_index)[1] <- "yearID"
+summary_salary_left <- left_join(summary_salary, inflation_index, by="yearID")
+summary_salary_left[summary_salary_left$yearID==2015,"inflation2015"]<-1
+
+player_data <- mutate(player_data, usa_born=ifelse(birthCountry == "USA", "Born in USA", "Born outside USA"))
+
+salary_data$playerID <- as.character(salary_data$playerID)
+player_data$playerID <- as.character(player_data$playerID)
+birth_data <- left_join(salary_data, player_data, by = "playerID")
+
+birth_data$yearID <- as.numeric(as.character(birth_data$yearID))
+left_join_data <- left_join(birth_data, summary_salary_left, by = "yearID")
+
+salary_joined <- summarize(group_by(left_join_data, yearID, usa_born), Q1 = quantile(salary*inflation2015,.25,na.rm=T), median=median(salary*inflation2015,na.rm=T), Q3 = quantile(salary*inflation2015,.75,na.rm=T), min=min(salary*inflation2015,na.rm=T), max=max(salary*inflation2015,na.rm=T))
+
+ggplot(data = subset(salary_joined, !is.na(usa_born), !is.na(yearID))) +
+  geom_ribbon(aes(x = yearID, ymin = Q1, ymax = Q3, fill = usa_born, group = usa_born), alpha = 0.4) +
+  geom_line(aes(x = yearID, y= median, group=usa_born, color=usa_born), size=1) + 
+  labs(y="Annual Salary  \n (Adjusted for Inflation)",x="Year",title="Salaries of Middle 50% of Major League Baseball", fill = "Middle 50% of Earners", color = "Median Salary") +
+  theme_minimal()
+```
+
