@@ -9,7 +9,6 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Anne Freeman" />
 
 
 <title>DC Migration</title>
@@ -250,24 +249,41 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">DC Migration</h1>
-<h4 class="author"><em>Anne Freeman</em></h4>
-<h4 class="date"><em>12/4/2018</em></h4>
 
 </div>
 
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>In this lab, we are exploring DC migration using data from the <a href="https://usa.ipums.org/usa/">U.S. Census</a>.Our goal is to imitate and revise the visualizations from the <a href="https://www.nytimes.com/interactive/2014/08/13/upshot/where-people-in-each-state-were-born.html">NYTimes</a>.We are creating displays showing where people born in DC lived in the decennial years between 1850 and 2000 (data from 1890 is missing).</p>
+<p>In this lab, we are exploring DC migration using data from the <a href="https://usa.ipums.org/usa/">U.S. Census</a>. Our goal is to imitate and revise the visualizations from the <a href="https://www.nytimes.com/interactive/2014/08/13/upshot/where-people-in-each-state-were-born.html">NYTimes</a>. We are creating displays showing where people born in DC lived in the decennial years between 1850 and 2000 (data from 1890 is missing).</p>
 </div>
 <div id="data-manipulation" class="section level2">
 <h2>Data Manipulation</h2>
-<p>First we load in the data sets. We have two data sets, one containing the information for the census regions and another containing information for the census regions with Maryland and Virginia separated out. Then we calculate the proportions that moved to each of the cenusus regions and Maryland and Virginia. Then we establish the decades within the dataset.</p>
+<pre class="r"><code>stateMigration &lt;- read.csv(&quot;data/stateMigrationDC.csv&quot;)
+stateMigration &lt;- select(stateMigration, -starts_with(&quot;num&quot;))
+stateMigration &lt;- select(stateMigration, YEAR, stayed=prop_stayed, west=prop_west, south=prop_south, midwest=prop_midwest, northeast=prop_northeast, maryland = prop_MD, virginia = prop_va)</code></pre>
+<p>We read in the csv containing the state migration data. Then we remove any of the columns that display the number of people (rather than the proportion). Then we select the variables we need, removing the other category, while renaming them to the apprioriate region/state. This dataset has Maryland and Virginia separated out from the rest of the southern states.</p>
+<pre class="r"><code>stateMigration &lt;- gather(stateMigration,-YEAR, key=region, value=propMoved)</code></pre>
+<p>We use the gather function in order to get a single column named region showing which region a proportion of people moved to and a column next to it showing the value of the proportion of people who moved to that region in that year.</p>
+<pre class="r"><code>decade &lt;- subset(stateMigration, YEAR %in% seq(1850,2000,by=10))
+decade &lt;- gather(decade, key=heightType, value=height, -c(YEAR,region,propMoved))
+decade$labelx &lt;- decade$YEAR
+decade[decade$YEAR &lt;= 1920,&quot;labelx&quot;] &lt;- 1850
+decade[decade$YEAR &gt;= 2000,&quot;labelx&quot;] &lt;- 2000
+decade$labelEnd &lt;- NA
+decade[decade$region == &quot;south&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people \n born in DC lived in other states in the South&quot;
+decade[decade$region == &quot;northeast&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people \n born in DC lived in the Northeast&quot;
+decade[decade$region == &quot;midwest&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people \n born in DC lived in the Midwest&quot;
+decade[decade$region == &quot;west&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people born in DC \n lived in the West&quot;
+decade[decade$region == &quot;stayed&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people \n born in DC lived in DC&quot;
+decade[decade$region == &quot;maryland&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people \n born in DC lived in Maryland&quot;
+decade[decade$region == &quot;virginia&quot;,&quot;labelEnd&quot;] &lt;- &quot;% of people \n born in DC lived in Virginia&quot;</code></pre>
+<p>Then we subset the data set so that we only look at data points every decade between 1850 and 2000.</p>
+<p>We repeat this data manipulation by reading in the second data set that only includes the 4 census regions and the option “stayed in DC”, rather than also separating out Maryland and Virginia.</p>
 </div>
 <div id="line-graph-of-migration" class="section level2">
 <h2>Line Graph of Migration</h2>
-<pre class="r"><code>## line graph 
-d &lt;- ggplot(stateMigration, aes(x=YEAR, y=propMoved)) + 
+<pre class="r"><code>d &lt;- ggplot(stateMigration, aes(x=YEAR, y=propMoved)) + 
   geom_line(aes(group=region,color=region)) + 
   labs(title=&quot;Migration from DC&quot;,y=&quot;Proportion that moved&quot;) +
   theme_classic()
